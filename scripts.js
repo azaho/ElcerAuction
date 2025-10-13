@@ -34,7 +34,7 @@ const db = getFirestore(app);
 // ============================================================================
 
 // URL to the YAML file containing SHA-256 hashes of valid passwords
-const HASHES_URL = '/hashes.yml';
+const HASHES_URL = 'https://azaho.github.io/ElcerAuction/hashes.yml';
 
 // Array to store valid password hashes loaded from YAML
 let validPasswordHashes = [];
