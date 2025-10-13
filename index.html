@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elcer Products Transaction - Auction Platform</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="auction-header">
+        <div class="header-content">
+            <div class="header-top">
+                <h1>11.111 Elcer Products Transaction</h1>
+                <div class="header-meta">
+                    <span class="transaction-id">Transaction ID: 11.111</span>
+                    <span class="dot-separator">•</span>
+                    <span class="auction-type">Negoti-Auction</span>
+                </div>
+            </div>
+            <div class="header-info">
+                <p class="organizer">Organized by TNDA Corporation Business Development Division</p>
+                <div class="deadline-box">
+                    <span class="deadline-label">Bidding Deadline:</span>
+                    <span class="deadline-value">Saturday, October 17, 2025 at 11:59 PM EST</span>
+                </div>
+            </div>
+            <div class="security-notice">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8 0L2 3V7C2 10.866 4.634 14.318 8 15C11.366 14.318 14 10.866 14 7V3L8 0Z" fill="currentColor"/>
+                </svg>
+                <span>Secure, transparent, and immutable bidding system. All bids are cryptographically protected and publicly verifiable. 
+                <a href="https://github.com/azaho/ElcerAuction" target="_blank" rel="noopener noreferrer">Review source code on GitHub →</a></span>
+            </div>
+        </div>
+    </header>
+
+    <main class="auction-main">
+        <div class="auction-container">
+            <section class="bidding-section">
+                <div class="section-header">
+                    <h2>Submit Your Bid</h2>
+                    <p class="section-subtitle">Enter your bid amount and one-time password</p>
+                </div>
+                <form id="bidForm">
+                    <div class="form-group">
+                        <label for="amount">Bid Amount (USD Millions)</label>
+                        <div class="input-wrapper">
+                            <span class="input-prefix">$</span>
+                            <input type="number" id="amount" step="1" min="325" placeholder="325" required>
+                            <span class="input-suffix">M</span>
+                        </div>
+                        <span class="field-hint">Minimum: $325M • Must be at least $1M above current highest</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">One-Time Password</label>
+                        <input type="password" id="password" maxlength="16" placeholder="Enter your 16-character password" required>
+                        <span class="field-hint">Each password can only be used once</span>
+                    </div>
+                    <button type="submit" class="submit-btn">
+                        <span class="btn-text">Submit Bid</span>
+                        <svg class="btn-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M4 10H16M16 10L10 4M16 10L10 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                    <div id="message"></div>
+                </form>
+            </section>
+
+            <section class="bids-section">
+                <div class="section-header">
+                    <h2>Live Bid Board</h2>
+                    <p class="section-subtitle">All validated bids in real-time</p>
+                </div>
+                <div id="bids" class="bids-list"></div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="auction-footer">
+        <p>All bids are confidential and secure. Only validated bids with correct one-time passwords are displayed.</p>
+    </footer>
+
+    <script type="module" src="/scripts.js"></script>
+</body>
+</html>

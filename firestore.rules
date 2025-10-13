@@ -1,0 +1,46 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /bids/{bidId} {
+      allow read: if true;
+      allow create: if request.resource.data.amount is int
+                    && request.resource.data.amount > 0
+
+                    && request.resource.data.password is string
+                    && request.resource.data.password.size() == 16
+                    
+                    // Minimum bid: 325M
+                    && request.resource.data.amount >= 325 
+
+                    // Timestamp MUST be server time - client cannot set custom timestamp
+                    && request.resource.data.timestamp == request.time
+                    
+                    // Document ID must equal the password (prevents password reuse)
+                    && bidId == request.resource.data.password
+                    
+                    // Document must not already exist (password hasn't been used)
+                    && !exists(/databases/$(database)/documents/bids/$(bidId))
+                    
+                    // SERVER-SIDE VALIDATION: Bid must be higher than current highest bid
+                    && (
+                      !exists(/databases/$(database)/documents/auction/state) 
+                      || request.resource.data.amount >= get(/databases/$(database)/documents/auction/state).data.highestBid+1
+                    );
+      allow update, delete: if false;
+    }
+    
+    // Allow read/write to auction state (used to track highest bid)
+    match /auction/state {
+      allow read: if true;
+      allow update: if request.resource.data.highestBid is int
+                    && request.resource.data.highestBid > 0
+                    && request.resource.data.highestBid > 325
+                    && request.resource.data.highestBid == get(/databases/$(database)/documents/bids/$(request.resource.data.highestBidPassword)).data.amount
+                    && request.resource.data.lastUpdated == request.time
+                    // Can only increase the highest bid (by 1 million minimum), never decrease
+                    && request.resource.data.highestBid >= resource.data.highestBid + 1;
+      allow create: if false; // Created only by admin
+      allow delete: if false;
+    }
+  }
+}
