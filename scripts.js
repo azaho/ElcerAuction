@@ -243,7 +243,7 @@ onSnapshot(q, async (snapshot) => {
         bidsHTML = validBids.map((bid, index) => `
             <div class="bid ${index === 0 ? 'highest-bid' : ''}">
                 <div class="bid-info">
-                    <strong>Anonymous (${bid.password})</strong>
+                    <strong>${bid.password} (Pearl Equity / US-IND / Euro EKV / Ruby Fibre)</strong>
                     <div style="font-size: 12px; color: #666; margin-top: 5px;">
                         ${bid.timestamp.toDate().toLocaleString()}
                     </div>

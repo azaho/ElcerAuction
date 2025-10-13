@@ -9,6 +9,10 @@ This auction system is designed for the **11.111 Elcer Products Transaction nego
 - Auction structured by Business Development Head and Elcer Products Division President
 - All bids are confidential and secure
 
+## How To Play
+
+To participate in the auction, each company can make up to 100 bids. Each bid has to be at least $1M above the previous highest bid, and above the starting price of $325M. To submit a bid, use your one-time passwords. Behind the scenes, the password is tied to your identity, but your identity is not visible to others. **In this auction, you pay what you bid.** By submitting a bid, you certify (with your credential) that you are willing to pay that amount should you win. Once used to make a bid, the one-time password becomes invalid and revealed to others, without revealing your identity.
+
 ---
 
 ## How It's Secured
