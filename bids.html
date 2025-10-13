@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auction Bids - Company View</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .bids-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+        
+        .bids-header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #312e81 100%);
+            color: white;
+            padding: 2rem 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        .bids-header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .company-pearl { border-left-color: #3b82f6; }
+        .company-usind { border-left-color: #10b981; }
+        .company-euro { border-left-color: #f59e0b; }
+        .company-ruby { border-left-color: #ef4444; }
+        
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+    <header class="bids-header">
+        <h1>Auction Bids - Company View</h1>
+        <p style="opacity: 0.9; margin-top: 0.5rem;">Live bids with company identification</p>
+    </header>
+
+    <div class="bids-container">
+        <section id="pasteSection" style="background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); margin-bottom: 2rem;">
+            <div class="section-header">
+                <h2>Load Passwords</h2>
+                <p class="section-subtitle">Paste the contents of passwords.yml below</p>
+            </div>
+            <div style="margin-bottom: 1rem;">
+                <textarea id="passwordsInput" style="width: 100%; height: 200px; font-family: 'Courier New', monospace; font-size: 0.875rem; padding: 1rem; border: 2px solid #e5e7eb; border-radius: 8px;" placeholder="Paste passwords.yml content here..."></textarea>
+            </div>
+            <button id="loadBtn" class="submit-btn" style="width: auto; padding: 0.75rem 2rem;">
+                <span class="btn-text">Load Bids</span>
+                <svg class="btn-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 10H16M16 10L10 4M16 10L10 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+            <div id="loadMessage" style="margin-top: 1rem; display: none;"></div>
+        </section>
+
+        <section id="bidsSection" style="background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); display: none;">
+            <div class="section-header">
+                <h2>All Bids</h2>
+                <p class="section-subtitle">Showing all bids with company names</p>
+            </div>
+            <div id="bids" class="bids-list">
+                <p class="loading">Loading bids...</p>
+            </div>
+        </section>
+    </div>
+
+    <script type="module">
+        // ============================================================================
+        // FIREBASE IMPORTS & CONFIGURATION
+        // ============================================================================
+
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+        import { 
+            getFirestore, 
+            collection, 
+            onSnapshot, 
+            query, 
+            orderBy
+        } from 'https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAx6u-5qO_M35rmgdc_N1YTf2LppPtIRpY",
+            authDomain: "elcer-auction.firebaseapp.com",
+            projectId: "elcer-auction",
+            storageBucket: "elcer-auction.firebasestorage.app",
+            messagingSenderId: "973241407405",
+            appId: "1:973241407405:web:8abad73a76fbf99da17324"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // ============================================================================
+        // LOAD PASSWORDS.YML
+        // ============================================================================
+
+        const HASHES_URL = 'https://azaho.github.io/ElcerAuction/hashes.yml';
+        
+        let companyPasswords = {};
+        let validPasswordHashes = [];
+        const usedPasswords = new Set();
+        let bidsListenerActive = false;
+
+        // Load js-yaml library
+        const jsYamlScript = document.createElement('script');
+        jsYamlScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js';
+        document.head.appendChild(jsYamlScript);
+
+        // Function to get company name from password
+        function getCompanyName(password) {
+            for (const [company, passwords] of Object.entries(companyPasswords)) {
+                if (passwords.includes(password)) {
+                    // Format company name nicely
+                    if (company === 'PEARL_EQUITY') return 'Pearl Equity';
+                    if (company === 'US_IND') return 'US-IND';
+                    if (company === 'EURO_EKV') return 'Euro EKV';
+                    if (company === 'RUBY_FIBRE') return 'Ruby Fibre';
+                    return company;
+                }
+            }
+            return 'Unknown';
+        }
+
+        // Function to get company CSS class
+        function getCompanyClass(password) {
+            for (const [company, passwords] of Object.entries(companyPasswords)) {
+                if (passwords.includes(password)) {
+                    if (company === 'PEARL_EQUITY') return 'company-pearl';
+                    if (company === 'US_IND') return 'company-usind';
+                    if (company === 'EURO_EKV') return 'company-euro';
+                    if (company === 'RUBY_FIBRE') return 'company-ruby';
+                }
+            }
+            return '';
+        }
+
+        // Hash function
+        async function sha256(message) {
+            const msgBuffer = new TextEncoder().encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        // Show message function
+        function showLoadMessage(text, type) {
+            const messageDiv = document.getElementById('loadMessage');
+            messageDiv.textContent = text;
+            messageDiv.className = type;
+            messageDiv.style.display = 'block';
+            messageDiv.style.padding = '0.875rem 1rem';
+            messageDiv.style.borderRadius = '8px';
+            messageDiv.style.fontWeight = '500';
+            messageDiv.style.fontSize = '0.875rem';
+            
+            if (type === 'success') {
+                messageDiv.style.background = '#d1fae5';
+                messageDiv.style.color = '#065f46';
+                messageDiv.style.border = '1px solid #10b981';
+            } else {
+                messageDiv.style.background = '#fee2e2';
+                messageDiv.style.color = '#991b1b';
+                messageDiv.style.border = '1px solid #ef4444';
+            }
+        }
+
+        // Load button handler
+        jsYamlScript.onload = () => {
+            document.getElementById('loadBtn').addEventListener('click', async () => {
+                const passwordsText = document.getElementById('passwordsInput').value.trim();
+                
+                if (!passwordsText) {
+                    showLoadMessage('Please paste the passwords.yml content first', 'error');
+                    return;
+                }
+
+                try {
+                    // Parse pasted YAML
+                    companyPasswords = jsyaml.load(passwordsText);
+                    console.log('Loaded company passwords:', Object.keys(companyPasswords));
+
+                    // Load hashes.yml
+                    const hashesResponse = await fetch(HASHES_URL);
+                    const hashesText = await hashesResponse.text();
+                    validPasswordHashes = jsyaml.load(hashesText);
+                    console.log(`Loaded ${validPasswordHashes.length} password hashes`);
+
+                    showLoadMessage('Data loaded successfully!', 'success');
+                    
+                    // Hide paste section, show bids section
+                    document.getElementById('pasteSection').style.display = 'none';
+                    document.getElementById('bidsSection').style.display = 'block';
+
+                    // Start listening to bids
+                    if (!bidsListenerActive) {
+                        startBidsListener();
+                        bidsListenerActive = true;
+                    }
+                } catch (error) {
+                    console.error('Error loading data:', error);
+                    showLoadMessage('Error loading data: ' + error.message, 'error');
+                }
+            });
+        };
+
+        // ============================================================================
+        // REAL-TIME BID DISPLAY
+        // ============================================================================
+
+        function startBidsListener() {
+            const q = query(collection(db, 'bids'), orderBy('timestamp', 'asc'));
+
+            onSnapshot(q, async (snapshot) => {
+                const bidsDiv = document.getElementById('bids');
+                const validBids = [];
+                
+                usedPasswords.clear();
+
+                for (const doc of snapshot.docs) {
+                    const bid = doc.data();
+                    
+                    if (!bid.timestamp) continue;
+                    
+                    const hash = await sha256(bid.password);
+
+                    if (validPasswordHashes.includes(hash) && !usedPasswords.has(bid.password)) {
+                        usedPasswords.add(bid.password);
+                        validBids.push(bid);
+                    }
+                }
+
+                // Sort by amount (highest to lowest)
+                validBids.sort((a, b) => b.amount - a.amount);
+
+                // Display bids
+                if (validBids.length === 0) {
+                    bidsDiv.innerHTML = `
+                        <p style="text-align: center; color: #6b7280; padding: 2rem;">No bids yet</p>
+                    `;
+                } else {
+                    const bidsHTML = validBids.map((bid, index) => {
+                        const companyName = getCompanyName(bid.password);
+                        const companyClass = getCompanyClass(bid.password);
+                        
+                        return `
+                            <div class="bid ${index === 0 ? 'highest-bid' : ''} ${companyClass}">
+                                <div class="bid-info">
+                                    <strong>${companyName}</strong>
+                                    <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                                        ${bid.timestamp.toDate().toLocaleString()}
+                                    </div>
+                                </div>
+                                <div class="bid-amount">$${bid.amount}M</div>
+                            </div>
+                        `;
+                    }).join('');
+                    
+                    bidsDiv.innerHTML = bidsHTML;
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+
